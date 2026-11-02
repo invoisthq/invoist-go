@@ -1,0 +1,248 @@
+{
+  "description": "verifyWebhook(payload, header, secret, tolerance, now). Each case either returns the event (expect.ok) or fails with InvoistError status 400 and expect.code.",
+  "secret": "whsec_0123456789abcdef0123456789abcdef",
+  "cases": [
+    {
+      "name": "valid",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520010,
+      "tolerance": 300,
+      "expect": {
+        "ok": true,
+        "type": "extraction.completed"
+      }
+    },
+    {
+      "name": "valid_with_spaces",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": " t=1793520000 , v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf ",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": true,
+        "type": "extraction.completed"
+      }
+    },
+    {
+      "name": "valid_unicode_body",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"document.created\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"original_filename\":\"Lasku_10_2026 – Northwind €.pdf\"}}",
+      "header": "t=1793520000,v1=f47517465fa8f6554be6660b2b62221a23fc75fae76458944d138e0dd12bbb87",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": true,
+        "type": "document.created"
+      }
+    },
+    {
+      "name": "rotation_any_v1_matches",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=0000000000000000000000000000000000000000000000000000000000000000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": true,
+        "type": "extraction.completed"
+      }
+    },
+    {
+      "name": "rotation_match_first",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf,v1=0000000000000000000000000000000000000000000000000000000000000000",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": true,
+        "type": "extraction.completed"
+      }
+    },
+    {
+      "name": "unknown_parts_ignored",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v0=abc,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf,x=1",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": true,
+        "type": "extraction.completed"
+      }
+    },
+    {
+      "name": "edge_of_window_past",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520300,
+      "tolerance": 300,
+      "expect": {
+        "ok": true,
+        "type": "extraction.completed"
+      }
+    },
+    {
+      "name": "tampered_body",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"fail\"}}",
+      "header": "t=1793520000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "wrong_secret",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=cce1cf0a07598757e619b8318e6127ee13c498a7f7325e90270cd68c16482c16",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "signature_for_other_timestamp",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520001,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "uppercase_hex_rejected",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=DF55BAAD33FBABC214266C85C02AF82EF1E7220BD89BDD78767E6FC6CFF291BF",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "stale",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520301,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "signature_too_old"
+      }
+    },
+    {
+      "name": "from_the_future",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793519699,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "signature_too_old"
+      }
+    },
+    {
+      "name": "tolerance_disabled",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1825056000,
+      "tolerance": 0,
+      "expect": {
+        "ok": true,
+        "type": "extraction.completed"
+      }
+    },
+    {
+      "name": "malformed_header",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "garbage",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "empty_header",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "missing_v1",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "missing_t",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "non_numeric_t",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=abc,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "stale_and_forged_is_invalid_signature",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,v1=1111111111111111111111111111111111111111111111111111111111111111",
+      "now": 1793523600,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "two_timestamps",
+      "payload": "{\"id\":\"01a19812-0000-7000-8000-000000000001\",\"type\":\"extraction.completed\",\"created_at\":\"2026-11-01T08:00:00Z\",\"data\":{\"document_id\":\"01a19812-0000-7000-8000-0000000000aa\",\"status\":\"done\"}}",
+      "header": "t=1793520000,t=1793520000,v1=df55baad33fbabc214266c85c02af82ef1e7220bd89bdd78767e6fc6cff291bf",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_signature"
+      }
+    },
+    {
+      "name": "signed_but_not_json",
+      "payload": "not json",
+      "header": "t=1793520000,v1=02df5e1eb601ade6a20005dee52f3cccd07e46328d1668168cf4807941d341ac",
+      "now": 1793520000,
+      "tolerance": 300,
+      "expect": {
+        "ok": false,
+        "code": "invalid_payload"
+      }
+    }
+  ]
+}

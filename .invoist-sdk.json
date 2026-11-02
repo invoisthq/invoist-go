@@ -1,0 +1,22 @@
+{
+  "name": "Go",
+  "mirror": "invoisthq/invoist-go",
+  "registry": "Go modules",
+  "package": "github.com/invoisthq/invoist-go",
+  "tool": "go",
+  "docker": "golang:1.27",
+  "commands": {
+    "setup": "go mod download",
+    "generate": "bash scripts/generate.sh",
+    "lint": "go vet ./... && unformatted=\"$(gofmt -l .)\" && { [ -z \"$unformatted\" ] || { echo \"gofmt needed: $unformatted\"; exit 1; }; } && go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...",
+    "test": "go test -count=1 ./...",
+    "build": "go build ./...",
+    "publish_dry_run": "go mod tidy -diff && go mod verify && go list -m",
+    "publish": "echo 'Go modules publish by tag: pushing the mirror tagged v'\"$(sed -n 's/^const Version = \"\\(.*\\)\"$/\\1/p' version.go)\"' is the release; proxy.golang.org fetches it on first request.'"
+  },
+  "generated": ["internal/generated/types.go", "types_gen.go"],
+  "version_files": [
+    { "path": "version.go", "pattern": "^const Version = \"([^\"]+)\"" }
+  ],
+  "tag_prefix": "v"
+}

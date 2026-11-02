@@ -1,0 +1,163 @@
+{
+  "description": "With max_retries=2. Each response is a status (0 = the connection failed) and optional Retry-After. expect.attempts is how many requests are made; expect.ok whether the call succeeds; expect.waits_ms the delays before each retry when Retry-After decides them (null = the backoff schedule, 500ms x 2^attempt with jitter).",
+  "cases": [
+    {
+      "name": "success_first_try",
+      "responses": [
+        {
+          "status": 200
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "attempts": 1
+      }
+    },
+    {
+      "name": "server_error_then_success",
+      "responses": [
+        {
+          "status": 503
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "attempts": 2,
+        "waits_ms": [
+          null
+        ]
+      }
+    },
+    {
+      "name": "rate_limited_honours_retry_after",
+      "responses": [
+        {
+          "status": 429,
+          "retry_after": "1"
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "attempts": 2,
+        "waits_ms": [
+          1000
+        ]
+      }
+    },
+    {
+      "name": "connection_failure_then_success",
+      "responses": [
+        {
+          "status": 0
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "attempts": 2,
+        "waits_ms": [
+          null
+        ]
+      }
+    },
+    {
+      "name": "gives_up_after_max_retries",
+      "responses": [
+        {
+          "status": 500
+        },
+        {
+          "status": 502
+        },
+        {
+          "status": 503
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "attempts": 3,
+        "status": 503
+      }
+    },
+    {
+      "name": "client_error_not_retried",
+      "responses": [
+        {
+          "status": 400
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "attempts": 1,
+        "status": 400
+      }
+    },
+    {
+      "name": "auth_error_not_retried",
+      "responses": [
+        {
+          "status": 401
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "attempts": 1,
+        "status": 401
+      }
+    },
+    {
+      "name": "not_found_not_retried",
+      "responses": [
+        {
+          "status": 404
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "attempts": 1,
+        "status": 404
+      }
+    },
+    {
+      "name": "retry_after_too_long_not_retried",
+      "responses": [
+        {
+          "status": 429,
+          "retry_after": "120"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "attempts": 1,
+        "status": 429
+      }
+    },
+    {
+      "name": "retry_after_not_an_integer_uses_backoff",
+      "responses": [
+        {
+          "status": 503,
+          "retry_after": "Wed, 21 Oct 2026 07:28:00 GMT"
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "attempts": 2,
+        "waits_ms": [
+          null
+        ]
+      }
+    }
+  ]
+}

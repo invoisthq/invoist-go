@@ -1,0 +1,25 @@
+# oapi-codegen configuration: types only, no client or server. The
+# hand-written client in the root package sits on top of these types and
+# re-exports them (types_gen.go). Run scripts/generate.sh, never edit
+# types.go by hand.
+package: generated
+output: internal/generated/types.go
+generate:
+  models: true
+compatibility:
+  always-prefix-enum-values: true
+output-options:
+  skip-prune: true
+  name-normalizer: ToCamelCaseWithInitialisms
+  generate-types-for-anonymous-schemas: true
+  prefer-skip-optional-pointer-on-container-types: true
+  type-mapping:
+    integer:
+      default: { type: int64 }
+    number:
+      default: { type: float64 }
+    string:
+      formats:
+        uuid: { type: string }
+        date: { type: string }
+        binary: { type: "[]byte" }

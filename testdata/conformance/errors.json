@@ -1,0 +1,185 @@
+{
+  "description": "A response with this status, headers and body becomes InvoistError with these fields. body is the raw response text.",
+  "cases": [
+    {
+      "name": "invalid_key",
+      "status": 401,
+      "headers": {
+        "X-Request-Id": "req_1"
+      },
+      "body": "{\"error\":{\"code\":\"invalid_api_key\",\"message\":\"invalid API key\"}}",
+      "expect": {
+        "code": "invalid_api_key",
+        "message": "invalid API key",
+        "request_id": "req_1",
+        "is_auth_error": true,
+        "is_permission_error": false,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": false
+      }
+    },
+    {
+      "name": "missing_scope",
+      "status": 403,
+      "headers": {},
+      "body": "{\"error\":{\"code\":\"insufficient_scope\",\"message\":\"missing required scope: bills:write\"}}",
+      "expect": {
+        "code": "insufficient_scope",
+        "message": "missing required scope: bills:write",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": true,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": false
+      }
+    },
+    {
+      "name": "household_route_with_business_key",
+      "status": 403,
+      "headers": {},
+      "body": "{\"error\":{\"code\":\"household_feature\",\"message\":\"this is part of Invoist Personal, for a household's bills\"}}",
+      "expect": {
+        "code": "household_feature",
+        "message": "this is part of Invoist Personal, for a household's bills",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": true,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": false
+      }
+    },
+    {
+      "name": "not_found",
+      "status": 404,
+      "headers": {},
+      "body": "{\"error\":{\"code\":\"not_found\",\"message\":\"document not found\"}}",
+      "expect": {
+        "code": "not_found",
+        "message": "document not found",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": false,
+        "is_not_found": true,
+        "is_rate_limited": false,
+        "is_retryable": false
+      }
+    },
+    {
+      "name": "rate_limited",
+      "status": 429,
+      "headers": {
+        "Retry-After": "3"
+      },
+      "body": "{\"error\":{\"code\":\"rate_limited\",\"message\":\"too many requests\"}}",
+      "expect": {
+        "code": "rate_limited",
+        "message": "too many requests",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": false,
+        "is_not_found": false,
+        "is_rate_limited": true,
+        "is_retryable": true
+      }
+    },
+    {
+      "name": "server_error",
+      "status": 500,
+      "headers": {},
+      "body": "{\"error\":{\"code\":\"internal_error\",\"message\":\"internal error\"}}",
+      "expect": {
+        "code": "internal_error",
+        "message": "internal error",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": false,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": true
+      }
+    },
+    {
+      "name": "proxy_html",
+      "status": 502,
+      "headers": {},
+      "body": "<html><body>Bad gateway</body></html>",
+      "expect": {
+        "code": "unexpected_response",
+        "message": "Request failed with status 502",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": false,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": true
+      }
+    },
+    {
+      "name": "empty_body",
+      "status": 503,
+      "headers": {},
+      "body": "",
+      "expect": {
+        "code": "unexpected_response",
+        "message": "Request failed with status 503",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": false,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": true
+      }
+    },
+    {
+      "name": "error_not_an_object",
+      "status": 400,
+      "headers": {},
+      "body": "{\"error\":\"bad\"}",
+      "expect": {
+        "code": "unexpected_response",
+        "message": "Request failed with status 400",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": false,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": false
+      }
+    },
+    {
+      "name": "envelope_missing_message",
+      "status": 400,
+      "headers": {},
+      "body": "{\"error\":{\"code\":\"invalid_query\"}}",
+      "expect": {
+        "code": "invalid_query",
+        "message": "Request failed with status 400",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": false,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": false
+      }
+    },
+    {
+      "name": "envelope_missing_code",
+      "status": 400,
+      "headers": {},
+      "body": "{\"error\":{\"message\":\"month must be YYYY-MM\"}}",
+      "expect": {
+        "code": "unexpected_response",
+        "message": "month must be YYYY-MM",
+        "request_id": null,
+        "is_auth_error": false,
+        "is_permission_error": false,
+        "is_not_found": false,
+        "is_rate_limited": false,
+        "is_retryable": false
+      }
+    }
+  ]
+}
